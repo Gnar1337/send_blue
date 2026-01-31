@@ -3,3 +3,8 @@ CREATE TABLE clients (
         name VARCHAR(255) NOT NULL,
         messages_sent INT DEFAULT 0
 );
+INSERT INTO clients (name, messages_sent) VALUES
+    ('Me', 0),
+    ('You', 0),
+    ('We', 0),
+    ('Blue Corp', 0);

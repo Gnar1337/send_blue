@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package imessage;
+
+// This ensures the generated Go code is placed in a 'proto' folder
+option go_package = "./proto";
+
+// The service definition
+service MessageService {
+  // Server-side streaming: One request, multiple status updates
+  rpc SendAndTrack(Message) returns (stream StatusUpdate);
+}
+
+// The Message type containing all your requested fields
+message Message {
+  string uid     = 1; // Unique ID (UUID)
+  string body    = 2; // The text content
+  string message = 3; // Additional message metadata if needed
+  string client  = 4; // Client identifier
+  string lead    = 5; // Lead/Contact identifier
+  string status  = 6; // Initial status (usually QUEUED)
+}
+
+// The object pushed back to the caller
+message StatusUpdate {
+  string uid    = 1; // Matching the message UID
+  string status = 2; // QUEUED, ACCEPTED, SENT, DELIVERED, RECEIVED
+}
