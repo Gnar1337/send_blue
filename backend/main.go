@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -11,20 +12,23 @@ import (
 )
 
 var messageQueue *MessageQueue
+var db *gorm.DB
 
 func main() {
 	// Init db
+	// db = initDBConn()
 	dsn := "host=db user=myuser password=mypass dbname=mydb port=5432 sslmode=disable"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
 	db.Exec("SELECT 1") // Simple query to verify connection
-	// END Init db
+	// // END Init db
 
 	//init queue
 	messageQueue = &MessageQueue{
-		items: make([]MessageQueueItem, 0),
+		items:    make([]MessageQueueItem, 0),
+		sendTime: 10 * time.Second,
 	}
 	// _ = messageQueue
 	// END init queue
@@ -41,6 +45,7 @@ func main() {
 
 	//ENDPOINTS
 	// GET Clients endpoint
+	// r.GET("/clients", r.Handlers...GetClients())
 	r.GET("/clients", func(c *gin.Context) {
 		var clients []Client
 		// _ = db.Table("clients").Find(&clients)
@@ -49,6 +54,7 @@ func main() {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
 		}
+		defer rows.Close()
 		for rows.Next() {
 			var client Client
 			if err := rows.Scan(&client.ID, &client.Name); err != nil {
@@ -121,23 +127,27 @@ func main() {
 			return
 		}
 		// Insert into DB
-		result := db.Exec("INSERT INTO message_queue (message_body, from_client_id, to_client_lead, scheduled_send_time, status, archived) VALUES ($1, $2, $3, $4, $5, $6)",
+		result := db.Raw("INSERT INTO message_queue (message_body, from_client_id, to_client_lead, scheduled_send_time, status, archived) VALUES ($1, $2, $3, $4, $5, $6) RETURNING msg_uid",
 			msgToQueue.MessageBody,
 			msgToQueue.FromClientID,
 			msgToQueue.ToClientLead,
 			msgToQueue.ScheduledSendTime,
 			msgToQueue.Status,
 			false,
-		)
+		).Scan(&msgToQueue.MsgUID)
+
 		if result.Error != nil {
 			c.JSON(500, gin.H{"error": result.Error.Error()})
 			return
 		}
+		db.Exec("SELECT currval('message_queue_msg_uid_seq')").Scan(&msgToQueue.MsgUID) // Get last inserted ID
 		// Enqueue
 		messageQueue.Enqueue(msgToQueue)
 		c.JSON(201, gin.H{"status": "received", "data": msgToQueue})
 	})
+
 	go populateLeads(db)
+	go sendMessagesFromQueue(db)
 	// Start server
 	r.Run(":8080")
 }
@@ -163,5 +173,17 @@ func populateLeads(db *gorm.DB) {
 				log.Println("Error inserting lead:", result.Error)
 			}
 		}
+	}
+}
+
+func sendMessagesFromQueue(db *gorm.DB) {
+	for {
+		item, ok := messageQueue.Dequeue()
+		if !ok {
+			time.Sleep(2 * time.Second)
+			continue
+		}
+		go SendiMessageAndListen(item, db)
+		time.Sleep(messageQueue.sendTime)
 	}
 }

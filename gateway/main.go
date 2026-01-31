@@ -8,7 +8,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	pb "github.com/Gnar1337/send_blue/tree/main/proto"
+	pb "github.com/Gnar1337/send_blue/proto"
 )
 
 type server struct {

@@ -3,6 +3,7 @@ import { RouterLink, RouterView } from 'vue-router'
 import {Client} from './.d.ts'
 import router from './router/index.ts';
 import Schedule from './views/Schedule.vue';
+import Dash from './views/Dash.vue';
 </script>
 
 <template>
@@ -33,6 +34,7 @@ import Schedule from './views/Schedule.vue';
     </div>
   </header>
   <Schedule :clientId="selectedClientId" />
+  <!-- <Dash v-else /> -->
   <!-- <RouterView /> -->
 </template>
 <script lang="ts">
@@ -48,6 +50,7 @@ export default {
       clients: [] as Client[],
       clientsLoading: false,
       clientsError: false,
+      schedule: true,
     };
     
   },

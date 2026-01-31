@@ -9,8 +9,9 @@ import (
 /////////////////// QUEUE //////////////////
 
 type MessageQueue struct {
-	items []MessageQueueItem
-	mu    sync.Mutex
+	items    []MessageQueueItem
+	mu       sync.Mutex
+	sendTime time.Duration
 }
 
 // Enqueue adds an item to the end
