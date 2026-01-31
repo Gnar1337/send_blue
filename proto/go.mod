@@ -1,4 +1,4 @@
-module github.com/Gnar1337/send_blue/tree/main/proto
+module github.com/Gnar1337/send_blue/proto
 
 go 1.25.6
 
