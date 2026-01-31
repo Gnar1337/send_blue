@@ -8,7 +8,7 @@ import (
 
 	"google.golang.org/grpc"
 
-	pb "iMessageProto/leet/proto"
+	pb "github.com/Gnar1337/send_blue/tree/main/proto"
 )
 
 type server struct {
