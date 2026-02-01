@@ -1,11 +1,13 @@
 # send_blue
 
-<h3>stack</h3>
-* vue
-* go
-* postgres
-* gRPC
-* Docker
+<h2>stack</h2>
+<ul>
+- vue
+- go
+- postgres
+- gRPC
+- Docker
+</ul>
 
 <h2>Steps to run:</h2>
 
