@@ -1,9 +1,0 @@
-{
-  "dependencies": {
-    "vue-router": "^5.0.0"
-  },
-  "devDependencies": {
-    "@tsconfig/node24": "^24.0.4",
-    "@vue/tsconfig": "^0.8.1"
-  }
-}

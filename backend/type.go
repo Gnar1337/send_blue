@@ -82,3 +82,10 @@ type MessageQueueItem struct {
 	Status            string       `gorm:"column:status" json:"status"`
 	Archived          bool         `gorm:"column:archived" json:"archived"`
 }
+
+type MessageEventHistory struct {
+	MsgUID     string    `gorm:"type:uuid;column:msg_uid" json:"msgUid"`
+	TimeStamp  time.Time `gorm:"column:event_time" json:"time_stamp"`
+	PrevStatus string    `gorm:"column:prev_status" json:"prev_status"`
+	CurrStatus string    `gorm:"column:curr_status" json:"curr_status"`
+}

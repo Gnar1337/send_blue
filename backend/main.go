@@ -46,14 +46,12 @@ func main() {
 	config.AllowOrigins = []string{"http://localhost:5173"}
 	// Optional: Allow credentials (cookies, auth headers)
 	config.AllowCredentials = true
-
 	r.Use(cors.New(config))
 
 	//ENDPOINTS
 	// GET Clients endpoint
 	r.GET("/clients", func(c *gin.Context) {
 		var clients []Client
-		// _ = db.Table("clients").Find(&clients)
 		rows, err := db.Raw("SELECT uid::text, name FROM clients").Rows()
 		if err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
@@ -68,8 +66,6 @@ func main() {
 			}
 			clients = append(clients, client)
 		}
-
-		// result := db.Table("clients").Find(&clients)
 		c.JSON(200, gin.H{
 			"clients": clients,
 		})
@@ -78,7 +74,6 @@ func main() {
 	r.GET("/clients/leads", func(c *gin.Context) {
 		var leads []Lead
 		clientId := c.Query("client_id")
-		// _ = db.Table("clients").Find(&clients)
 		rows, err := db.Raw("SELECT lead_number FROM client_leads WHERE client_uid = $1", clientId).Rows()
 		if err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
@@ -92,8 +87,6 @@ func main() {
 			}
 			leads = append(leads, lead)
 		}
-
-		// result := db.Table("clients").Find(&clients)
 		c.JSON(200, gin.H{
 			"leads": leads,
 		})
@@ -111,14 +104,11 @@ func main() {
 		for rows.Next() {
 			var msg MessageQueueItem
 			if err := rows.Scan(&msg.MsgUID, &msg.MessageBody, &msg.FromClientID, &msg.ToClientLead, &msg.ScheduledSendTime, &msg.TimeSent, &msg.Status); err != nil {
-
 				c.JSON(500, gin.H{"error": err.Error()})
 				return
 			}
 			msgs = append(msgs, msg)
 		}
-
-		// result := db.Table("clients").Find(&clients)
 		c.JSON(200, gin.H{
 			"messages": msgs,
 		})
@@ -131,7 +121,7 @@ func main() {
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
-		// Insert into DB
+		// Insert into DB and get the generated UUID
 		result := db.Raw("INSERT INTO message_queue (message_body, from_client_id, to_client_lead, scheduled_send_time, status, archived) VALUES ($1, $2, $3, $4, $5, $6) RETURNING msg_uid",
 			msgToQueue.MessageBody,
 			msgToQueue.FromClientID,

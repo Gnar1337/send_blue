@@ -22,19 +22,10 @@ export interface MessageQueue {
     timeSent: Date | null;
     status: string;
 }
-
+// Dashboard message event history interface
 export interface MessageEventHistory {
     msgUid: string;
     time_stamp: Date;
     prev_status: string | null;
     curr_status: string;
-}
-
-export interface MessageArchive {
-    msgUid: string;
-    messageBody: string;
-    from_client_id: string;
-    to_client_lead: string;
-    time_archived: Date | null;
-    status: string;
 }

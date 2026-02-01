@@ -25,14 +25,6 @@ func SendiMessageAndListen(m MessageQueueItem, db *gorm.DB) {
 	client := pb.NewMessageServiceClient(conn)
 
 	// 2. Prepare the Message payload
-	// msg := &pb.Message{
-	// 	Uid:     "uuid-12345",
-	// 	Body:    "Testing the iMessage Status Pipeline",
-	// 	Message: "Metadata here",
-	// 	Client:  "Internal-App",
-	// 	Lead:    "John Doe",
-	// 	Status:  "QUEUED",
-	// }
 	msg := &pb.Message{
 		Uid:     m.MsgUID,
 		Body:    m.MessageBody,

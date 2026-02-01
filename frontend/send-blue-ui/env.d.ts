@@ -1,2 +1,1 @@
 /// <reference types="vite/client" />
-VITE_API_BASE=http://localhost:8080/ping

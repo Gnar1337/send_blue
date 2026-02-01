@@ -19,7 +19,7 @@ services:
     build: ./backend
     environment:
       DATABASE_URL: postgres://myuser:mypass@db:5432/mydb
-      QUEUE_INTERVAL: 15 # Interval in seconds between sending messages from the queue
+      QUEUE_INTERVAL: 3600 # Interval in seconds between sending messages from the queue
     depends_on:
       db:
         condition: service_healthy
