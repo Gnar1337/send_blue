@@ -1,10 +1,25 @@
 version: "3.9"
 
 services:
+  frontend:
+    build:
+      context: ./frontend/send-blue-ui
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"  # Vite dev server port
+    volumes:
+      - ./frontend/send-blue-ui:/app
+      - /app/node_modules  # Prevents overwriting node_modules
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - backend  # If your frontend calls an API
+
   backend:
     build: ./backend
     environment:
       DATABASE_URL: postgres://myuser:mypass@db:5432/mydb
+      QUEUE_INTERVAL: 15 # Interval in seconds between sending messages from the queue
     depends_on:
       db:
         condition: service_healthy

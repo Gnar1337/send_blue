@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -26,9 +28,13 @@ func main() {
 	// // END Init db
 
 	//init queue
+	interval, err := strconv.Atoi(os.Getenv("QUEUE_INTERVAL")) // Load .env file
+	if err != nil {
+		log.Fatal("Failed to parse QUEUE_INTERVAL environment variable:", err)
+	}
 	messageQueue = &MessageQueue{
 		items:    make([]MessageQueueItem, 0),
-		sendTime: 10 * time.Second,
+		sendTime: time.Duration(interval) * time.Second,
 	}
 	// _ = messageQueue
 	// END init queue
@@ -45,7 +51,6 @@ func main() {
 
 	//ENDPOINTS
 	// GET Clients endpoint
-	// r.GET("/clients", r.Handlers...GetClients())
 	r.GET("/clients", func(c *gin.Context) {
 		var clients []Client
 		// _ = db.Table("clients").Find(&clients)
@@ -99,14 +104,14 @@ func main() {
 		// _ = db.Table("clients").Find(&clients)
 		rows, err := db.Raw("SELECT msg_uid::text, message_body, from_client_id::text, to_client_lead, scheduled_send_time, time_sent, status FROM message_queue WHERE status = 'QUEUED' AND from_client_id::text = $1 AND NOT archived ORDER BY scheduled_send_time ASC", fromClientId).Rows()
 		if err != nil {
-			fmt.Println(err)
+
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
 		}
 		for rows.Next() {
 			var msg MessageQueueItem
 			if err := rows.Scan(&msg.MsgUID, &msg.MessageBody, &msg.FromClientID, &msg.ToClientLead, &msg.ScheduledSendTime, &msg.TimeSent, &msg.Status); err != nil {
-				fmt.Println(err)
+
 				c.JSON(500, gin.H{"error": err.Error()})
 				return
 			}
@@ -140,7 +145,6 @@ func main() {
 			c.JSON(500, gin.H{"error": result.Error.Error()})
 			return
 		}
-		db.Exec("SELECT currval('message_queue_msg_uid_seq')").Scan(&msgToQueue.MsgUID) // Get last inserted ID
 		// Enqueue
 		messageQueue.Enqueue(msgToQueue)
 		c.JSON(201, gin.H{"status": "received", "data": msgToQueue})
@@ -177,6 +181,7 @@ func populateLeads(db *gorm.DB) {
 }
 
 func sendMessagesFromQueue(db *gorm.DB) {
+	fmt.Println("send time = ", messageQueue.sendTime)
 	for {
 		item, ok := messageQueue.Dequeue()
 		if !ok {
