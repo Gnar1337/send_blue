@@ -141,7 +141,7 @@ func main() {
 	})
 
 	go populateLeads(db)
-	go sendMessagesFromQueue(db)
+	go delayDumpQueue(db)
 	// Start server
 	r.Run(":8080")
 }
@@ -170,8 +170,16 @@ func populateLeads(db *gorm.DB) {
 	}
 }
 
+// Delays the sends all messages
+func delayDumpQueue(db *gorm.DB) {
+	for {
+		time.Sleep(messageQueue.sendTime)
+		sendMessagesFromQueue(db)
+	}
+}
+
+// Sends messages from the queue
 func sendMessagesFromQueue(db *gorm.DB) {
-	fmt.Println("send time = ", messageQueue.sendTime)
 	for {
 		item, ok := messageQueue.Dequeue()
 		if !ok {
@@ -179,6 +187,5 @@ func sendMessagesFromQueue(db *gorm.DB) {
 			continue
 		}
 		go SendiMessageAndListen(item, db)
-		time.Sleep(messageQueue.sendTime)
 	}
 }
