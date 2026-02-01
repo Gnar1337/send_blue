@@ -57,7 +57,7 @@ func SendiMessageAndListen(m MessageQueueItem, db *gorm.DB) {
 
 		// io.EOF means the server (Gateway) has finished sending all 5 statuses
 		if err == io.EOF {
-			log.Println("✅ All updates received. Lifecycle complete.")
+			log.Println("✅ All updates received. iMessage Lifecycle complete closing stream.")
 			break
 		}
 		if err != nil {
