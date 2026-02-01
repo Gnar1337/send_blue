@@ -1,9 +1,8 @@
 # send_blue
 
 <h3>stack</h3>
-1 => vue
-2 => go
-3 => go
+vue
+go
 postgres
 gRPC
 Docker
