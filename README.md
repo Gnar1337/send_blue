@@ -2,11 +2,11 @@
 
 <h2>stack</h2>
 <ul>
-- vue
-- go
-- postgres
-- gRPC
-- Docker
+<li>vue</li>
+<li>go</li>
+<li>postgres</li>
+<li>gRPC</li>
+<li>Docker</li>
 </ul>
 
 <h2>Steps to run:</h2>
