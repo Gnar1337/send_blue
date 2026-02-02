@@ -6,7 +6,6 @@ import { clientStore } from './stores/client.ts';
 import router from './router/index.ts';
 const store = clientStore()
 </script>
-
 <template>
   <header>
     <img alt="Vue logo" class="logo" src="@/assets/send_blue_logo.jpg" width="125" height="125" />

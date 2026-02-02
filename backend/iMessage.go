@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	// "go/types"
 	"io"
 	"log"
+	"send-blue-backend/types"
 
 	// This matches the module name in your proto/go.mod
 	pb "github.com/Gnar1337/send_blue/proto"
@@ -13,7 +15,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func SendiMessageAndListen(m MessageQueueItem, db *gorm.DB) {
+func SendiMessageAndListen(m types.MessageQueueItem, db *gorm.DB) {
 	// 1. Establish connection to the Gateway (Simulator)
 	// In Docker, "gateway" matches the service name in docker-compose.yml
 	conn, err := grpc.NewClient("gateway:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))

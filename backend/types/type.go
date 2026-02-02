@@ -1,16 +1,30 @@
-package main
+package types
 
 import (
 	"database/sql"
 	"sync"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 // ///////////////// QUEUE //////////////////
+// MessageQueue holds messages to queue
 type MessageQueue struct {
 	items    []MessageQueueItem
 	mu       sync.Mutex
 	sendTime time.Duration
+}
+
+// InitQueue initializes the queue
+func InitQueue(newSendTime time.Duration, db *gorm.DB) *MessageQueue {
+	MsgQueue := MessageQueue{
+		items:    make([]MessageQueueItem, 0),
+		mu:       sync.Mutex{},
+		sendTime: newSendTime * time.Second,
+	}
+	MsgQueue.GetCachedQueue(db)
+	return &MsgQueue
 }
 
 // Enqueue adds an item to the end
@@ -24,6 +38,12 @@ func (q *MessageQueue) ChangeSendTime(newSendTime time.Duration) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.sendTime = newSendTime * time.Second
+}
+
+func (q *MessageQueue) GetSendTime() time.Duration {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	return q.sendTime
 }
 
 // Dequeue removes and returns the front item
@@ -40,7 +60,29 @@ func (q *MessageQueue) Dequeue() (MessageQueueItem, bool) {
 	return item, true
 }
 
+// GetCachedQueue retrieves queue from DB although in prodw would use Redis
+func (q *MessageQueue) GetCachedQueue(db *gorm.DB) bool {
+	rows, err := db.Raw("SELECT msg_uid::text, message_body, from_client_id::text, to_client_lead, scheduled_send_time, time_sent, status FROM message_queue WHERE status = 'QUEUED' AND NOT archived ORDER BY scheduled_send_time ASC").Rows()
+	if err != nil {
+		return false
+	}
+	for rows.Next() {
+		var msg MessageQueueItem
+		if err := rows.Scan(&msg.MsgUID, &msg.MessageBody, &msg.FromClientID, &msg.ToClientLead, &msg.ScheduledSendTime, &msg.TimeSent, &msg.Status); err != nil {
+			return false
+		}
+		q.Enqueue(msg)
+	}
+	return true
+}
+
 // ///////////////// DB TYPES ///////////////////
+// DBConn holds the connection setup for scaling
+type DBConn struct {
+	Conn *gorm.DB
+}
+
+// Client holds various client data
 type Client struct {
 	ID              string             `gorm:"type:uuid;primaryKey;column:uid" json:"uid"`
 	Name            string             `json:"name"`
@@ -49,6 +91,8 @@ type Client struct {
 	MessagesInQueue []MessageQueueItem `gorm:"foreignKey:FromClientID;references:ID" json:"messageQueue"`
 	AllMessagesSent []MessageQueueItem `gorm:"foreignKey:FromClientID;references:ID" json:"allMessagesSent"`
 }
+
+// Lead for lead information
 type Lead struct {
 	LeadNumber       string       `json:"leadNumber"`
 	ClientUID        string       `gorm:"type:uuid;column:client_uid" json:"clientUid"`
@@ -56,6 +100,7 @@ type Lead struct {
 	LastContacted    sql.NullTime `json:"lastContacted"`
 }
 
+// MessageQueueItem is the actualmessage data
 type MessageQueueItem struct {
 	MsgUID              string                `gorm:"type:uuid;primaryKey;column:msg_uid" json:"uid"`
 	MessageBody         string                `gorm:"column:message_body" json:"messageBody"`
@@ -68,6 +113,7 @@ type MessageQueueItem struct {
 	MessageEventHistory []MessageEventHistory `gorm:"foreignKey:MsgUID;references:MsgUID" json:"messageEventHistory"`
 }
 
+// MessageEventHistory is for tracking a messages history
 type MessageEventHistory struct {
 	MsgUID     string    `gorm:"type:uuid;column:msg_uid" json:"msgUid"`
 	TimeStamp  time.Time `gorm:"column:event_time" json:"time_stamp"`
