@@ -60,7 +60,7 @@ func (q *MessageQueue) Dequeue() (MessageQueueItem, bool) {
 	return item, true
 }
 
-// GetCachedQueue retrieves queue from DB although in prodw would use Redis
+// GetCachedQueue retrieves queue from DB although in prod would use Redis
 func (q *MessageQueue) GetCachedQueue(db *gorm.DB) bool {
 	rows, err := db.Raw("SELECT msg_uid::text, message_body, from_client_id::text, to_client_lead, scheduled_send_time, time_sent, status FROM message_queue WHERE status = 'QUEUED' AND NOT archived ORDER BY scheduled_send_time ASC").Rows()
 	if err != nil {
