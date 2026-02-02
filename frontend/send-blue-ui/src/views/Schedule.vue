@@ -44,10 +44,12 @@
 </template>
 
 <script lang="ts">
-import { ClientLead, MessageQueue } from '../d.ts'
+import type { ClientLead, MessageQueue } from '../data.ts'
 import ScheduledMessages from './ScheduledMessages.vue'
 import { VueDatePicker } from '@vuepic/vue-datepicker'
+import { fetchClientLeads, fetchMessageQueue } from '../data.ts'
 import '@vuepic/vue-datepicker/dist/main.css'
+import { clientStore } from '@/stores/client.ts'
 
 export default {
   name: 'Schedule',
@@ -55,7 +57,7 @@ export default {
   props: {
     clientId: {
       type: String,
-      required: false,
+      required: true,
     },
   },
   watch: {
@@ -63,17 +65,28 @@ export default {
       handler(newVal: string) {
         console.log('clientId changed to:', newVal)
         if (newVal) {
-          this.fetchClientLeads(newVal)
-            this.fetchScheduledMessages(newVal)
+          fetchClientLeads(newVal).then((leads) => {
+            this.leads = leads
+          })
+          fetchMessageQueue(newVal).then((messages) => {
+            this.scheduledMessages = messages
+          })
         }
       },
       deep: true,
     },
   },
   created() {
+    fetchClientLeads(this.clientId).then((leads) => {
+      this.leads = leads
+    })
     // default date/time to one hour from now
     this.dateTime = new Date(Date.now() + 60 * 60 * 1000)
-    // this.fetchScheduledMessages(this.clientId || '')
+  },
+  mounted() {
+    fetchClientLeads(this.clientId).then((leads) => {
+        this.leads = leads
+      })
   },
   data() {
     return {
@@ -82,7 +95,7 @@ export default {
       message: '',
       scheduledMessages: [] as MessageQueue[],
       phone: '',
-      dateTime: null as Date | null,
+      dateTime: new Date(),
       clientsLoading: false,
       clientsError: false,
     }
@@ -96,57 +109,27 @@ export default {
     },
   },
   methods: {
-    async fetchClientLeads(clientid: string) {
-      this.clientsLoading = true
-      this.clientsError = false
-      try {
-        const base = import.meta.env.VITE_API_BASE || ''
-        const res = await fetch(`${base}/clients/leads?client_id=${clientid}`)
-        if (!res.ok) throw new Error('Network')
-        const data = await res.json()
-        this.leads = data.leads || []
-      } catch (e) {
-        this.clientsError = true
-        console.error('fetchClients error', e)
-      } finally {
-        this.clientsLoading = false
-      }
-    },
-    async fetchScheduledMessages(clientid: string) {
-      this.clientsLoading = true
-      this.clientsError = false
-      try {
-        const base = import.meta.env.VITE_API_BASE || '' 
-        const res = await fetch(`${base}/clients/scheduled?client_id=${clientid}`)
-        if (!res.ok) throw new Error('Network')
-        const data = await res.json()
-        console.log('Fetched scheduled messages:', data)
-        this.scheduledMessages = data.messages || []
-      } catch (e) {
-        this.clientsError = true
-        console.error('fetchScheduledMessages error', e)
-      } finally {
-        this.clientsLoading = false
-      }
-    },
     async scheduleMessageToBackend(msgToQueue: MessageQueue) {
       const base = import.meta.env.VITE_API_BASE || ''
       const res = await fetch(`${base}/client/schedule_message`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(msgToQueue),
-      })
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(msgToQueue),
+          })
       if (!res.ok) throw new Error('Failed to schedule message')
-      const data = await res.json()
-    if (data.error) {
+          const data = await res.json()
+      if (data.error) {
         console.error('Backend error scheduling message:', data.error)
         throw new Error(data.error)
       } else{
-        console.log('Message scheduled successfully:', data)
-         this.fetchScheduledMessages(this.clientId || '')
-        // this.scheduledMessages.push(msgToQueue)
+          console.log('Message scheduled successfully:', data)
+          fetchMessageQueue(this.clientId || '').then((messages) => {
+            this.scheduledMessages = messages
+            clientStore().setCurrClient(this.clientId)
+          })
+
       }
     },
     onLeadChange() {
@@ -154,15 +137,13 @@ export default {
       this.phone = this.phone || ''
     },
     scheduleMessage() {
-      if (!this.canSchedule) return
+      if (!this.canSchedule) {
+        return
+      } 
       const whenIso = this.dateTime instanceof Date ? this.dateTime.toISOString() : new Date(this.dateTime).toISOString()
-    //   this.scheduledMessages.unshift({
-    //     phone: this.phone,
-    //     message: this.message,
-    //     when: whenIso,
-    //   })
       //create MeessageQueue entry in backend here
       let msgToQueue: MessageQueue = {
+        msgUid:'',
         messageBody: this.message,
         fromClientId: this.clientId || '',
         toClientLead: this.phone,
@@ -170,11 +151,15 @@ export default {
         timeSent: null,
         status: 'QUEUED',
       } 
-        this.scheduleMessageToBackend(msgToQueue)
+      this.scheduleMessageToBackend(msgToQueue).catch((err) => {
+        console.error('Error scheduling message:', err)
+      }).then(() => {
+        // Message scheduled successfully, UI updated in scheduleMessageToBackend
+        this.phone = ''
+        this.message = ''
+        this.dateTime = new Date(Date.now() + 60 * 60 * 1000)
+      })
     //   this.scheduledMessages.push(msgToQueue);
-      this.phone = ''
-      this.message = ''
-      this.dateTime = new Date(Date.now() + 60 * 60 * 1000)
     },
     formatDate(iso: string) {
       const d = new Date(iso)

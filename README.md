@@ -7,6 +7,7 @@
 3. change `QUEUE_INTERVAL` value to change the interval between sending messages in the `docker-compose.yaml`
 4. run `docker compose up` 
 5. Navigate to `http://localhost:5173/` to schedule
+6. to change the queue send time use this url get `http://localhost:8080/gateway/interval?seconds=180` this example will change the queue time to 180 seconds
 
 <h2>stack</h2>
 <ul>

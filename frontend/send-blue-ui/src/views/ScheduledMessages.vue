@@ -32,7 +32,7 @@
 
 <script setup lang="ts">
 // import { m } from 'vue-router/dist/router-CWoNjPRp.mjs';
-import { MessageQueue } from '../d.ts'
+import type { MessageQueue } from '../data.ts'
 defineProps<{
 	// scheduledMessages: { phone: string; message: string; when: string; }[];
 	scheduledMessages: MessageQueue[];

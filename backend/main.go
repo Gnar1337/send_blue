@@ -18,7 +18,6 @@ var db *gorm.DB
 
 func main() {
 	// Init db
-	// db = initDBConn()
 	dsn := "host=db user=myuser password=mypass dbname=mydb port=5432 sslmode=disable"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -36,7 +35,6 @@ func main() {
 		items:    make([]MessageQueueItem, 0),
 		sendTime: time.Duration(interval) * time.Second,
 	}
-	// _ = messageQueue
 	// END init queue
 
 	// Initialize Gin router
@@ -114,6 +112,44 @@ func main() {
 		})
 	})
 
+	r.GET("/client/data", func(c *gin.Context) {
+		clientId := c.Query("client_id")
+		client := Client{}
+		// leads := []Lead{}
+		query := `SELECT lead_number, client_uid, messages_received, last_contacted 
+					FROM client_leads 
+					WHERE client_uid = $1;`
+		err := db.Raw(query, clientId).Scan(&client.Leads).Error
+		if err != nil {
+			log.Println("Error scanning clientleads:", err)
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+		query = `SELECT msg_uid, message_body, from_client_id, to_client_lead, 
+       				scheduled_send_time, time_sent, status, archived 
+					FROM message_queue 
+					WHERE from_client_id = $1 AND status = 'QUEUED';   `
+		err = db.Raw(query, clientId).Scan(&client.MessagesInQueue).Error
+		if err != nil {
+			log.Println("Error scanning messagequeue:", err)
+		}
+		query = `SELECT msg_uid, message_body, from_client_id, to_client_lead, 
+					scheduled_send_time, time_sent, status, archived 
+					FROM message_queue 
+					WHERE from_client_id = $1 AND status != 'QUEUED';`
+		err = db.Raw(query, clientId).Scan(&client.AllMessagesSent).Error
+		if err != nil {
+			log.Println("Error scanning allmessagessent:", err)
+		}
+		client.ID = clientId
+		err = db.Raw(`SELECT name FROM clients WHERE uid::text = $1`, clientId).Scan(&client.Name).Error
+		if err != nil {
+			log.Println("Error scanning name:", err)
+		}
+		fmt.Println("executed query")
+		c.JSON(200, gin.H{"client": client})
+	})
+
 	// POST endpoint
 	r.POST("/client/schedule_message", func(c *gin.Context) {
 		var msgToQueue MessageQueueItem
@@ -138,6 +174,16 @@ func main() {
 		// Enqueue
 		messageQueue.Enqueue(msgToQueue)
 		c.JSON(201, gin.H{"status": "received", "data": msgToQueue})
+	})
+	r.GET("/gateway/interval", func(c *gin.Context) {
+		seconds := c.Query("seconds")
+		interval, err := strconv.Atoi(seconds)
+		if err != nil {
+			log.Fatal("Failed to parse QUEUE_INTERVAL environment variable:", err)
+		}
+		fmt.Println("Queue interval set to:", interval, "seconds")
+		messageQueue.ChangeSendTime(time.Duration(interval))
+		c.JSON(200, gin.H{"status": "received", "data": messageQueue.sendTime})
 	})
 
 	go populateLeads(db)
@@ -183,8 +229,7 @@ func sendMessagesFromQueue(db *gorm.DB) {
 	for {
 		item, ok := messageQueue.Dequeue()
 		if !ok {
-			time.Sleep(2 * time.Second)
-			continue
+			return
 		}
 		go SendiMessageAndListen(item, db)
 	}

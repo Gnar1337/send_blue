@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import {Client} from './.d.ts'
+import { RouterLink, RouterView, useRoute } from 'vue-router'
+import type { Client } from './data.ts'
+import { fetchClients, fetchClientData } from './data.ts'
+import { clientStore } from './stores/client.ts';
 import router from './router/index.ts';
-import Schedule from './views/Schedule.vue';
-import Dash from './views/Dash.vue';
+const store = clientStore()
 </script>
 
 <template>
@@ -11,11 +12,10 @@ import Dash from './views/Dash.vue';
     <img alt="Vue logo" class="logo" src="@/assets/send_blue_logo.jpg" width="125" height="125" />
 
     <div class="wrapper">
-      <!-- <HelloWorld msg="Send Blue" /> -->
-  <div v-if="clientsLoading" class="card form-card">
+    <div v-if="clientsLoading" class="card form-card">
         Loading clients...
-      </div>
-         <div else class="card form-card">
+    </div>
+    <div v-else class="card form-card">
       <label class="field-label">Client</label>
       <div class="client-row">
         <select class="client-select" v-model="selectedClientId" @change="onClientChange">
@@ -25,62 +25,56 @@ import Dash from './views/Dash.vue';
           </option>
         </select>
       </div>
-         </div>
+    </div>
       <nav>
-        <!-- <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/Dashboard">Dashboard</RouterLink>
-         <RouterLink to="/schedule">Schedule</RouterLink> -->
+        <RouterLink :to="`/dash/${selectedClientId}`">Dashboard</RouterLink>
+        <RouterLink :to="`/schedule/${selectedClientId}`">Schedule</RouterLink>
       </nav>
     </div>
   </header>
-  <Schedule :clientId="selectedClientId" />
-  <!-- <Dash v-else /> -->
-  <!-- <RouterView /> -->
+  <RouterView v-if="selectedClientId != '' && !clientsLoading" :key="update" />
 </template>
 <script lang="ts">
 export default {
   name: 'App',
   data() {
     return {
-      // clients: [
-      //   { id: '1', name: 'Client A' },
-      //   { id: '2', name: 'Client B' },
-      // ],
       selectedClientId: '',
+      update: 0,
       clients: [] as Client[],
-      clientsLoading: false,
+      clientsLoading: true,
       clientsError: false,
       schedule: true,
     };
-    
   },
   created() {
     console.log('App created hook');
-    this.fetchClients();
+    fetchClients().then(data => {
+      this.clients = data;
+      this.clientsLoading = false;
+    }).catch(err => {
+      console.error('Error fetching clients:', err);
+      this.clientsError = true;
+      this.clientsLoading = false;
+    })
   },
+  watch: {
+  clients(newVal) {
+    if (newVal.length > 0) {
+      this.selectedClientId = newVal[0].uid;
+      this.onClientChange
+    }
+  }
+}, 
   methods: {
-      async fetchClients() {
-      this.clientsLoading = true
-      this.clientsError = false
-      try {
-        const base = import.meta.env.VITE_API_BASE || ''
-        const res = await fetch(`${base}/clients`)
-        if (!res.ok) throw new Error('Network')
-        const data = await res.json()
-        console.log('Fetched clients:', data)
-        // Expecting [ { id, name, phone } ]
-        console.log('Clients set to:', this.clients)
-        this.clients = data.clients || []
-      } catch (e) {
-        this.clientsError = true
-        console.error('fetchClients error', e)
-      } finally {
-        this.clientsLoading = false
-      }
-    },
     onClientChange() {
-      console.log('Selected client ID:', this.selectedClientId);
-      router.push({ path: `/schedule/${this.selectedClientId}` });
+      var basePath = '/' + router.currentRoute.value.path.split('/')[1]
+      console.log('Selected path = ', basePath + '/' + this.selectedClientId);
+      router.push({ path: `${basePath}/${this.selectedClientId}` });
+      clientStore().setCurrClient(this.selectedClientId).finally( () => {
+        console.log(this.selectedClientId)
+        this.update++
+      });
     },
   },
 };

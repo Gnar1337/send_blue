@@ -6,8 +6,7 @@ import (
 	"time"
 )
 
-/////////////////// QUEUE //////////////////
-
+// ///////////////// QUEUE //////////////////
 type MessageQueue struct {
 	items    []MessageQueueItem
 	mu       sync.Mutex
@@ -19,6 +18,12 @@ func (q *MessageQueue) Enqueue(item MessageQueueItem) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.items = append(q.items, item)
+}
+
+func (q *MessageQueue) ChangeSendTime(newSendTime time.Duration) {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	q.sendTime = newSendTime * time.Second
 }
 
 // Dequeue removes and returns the front item
@@ -35,35 +40,14 @@ func (q *MessageQueue) Dequeue() (MessageQueueItem, bool) {
 	return item, true
 }
 
-// func main() {
-//     q := &SafeQueue{}
-//     q.Enqueue("Data A")
-//     q.Enqueue("Data B")
-
-//     val, ok := q.Dequeue()
-//     if ok {
-//         fmt.Println("Dequeued:", val) // Output: Data A
-//     }
-// }
-// type MessageQueue []MessageQueueItem
-
-// func (mq *MessageQueue) Enqueue(item MessageQueueItem) {
-// 	*mq = append(*mq, item)
-// }
-// func (mq *MessageQueue) Dequeue() (MessageQueueItem, bool) {
-// 	if len(*mq) == 0 {
-// 		return MessageQueueItem{}, false
-// 	}
-// 	item := (*mq)[0]
-// 	*mq = (*mq)[1:]
-// 	return item, true
-// }
-
 // ///////////////// DB TYPES ///////////////////
 type Client struct {
-	ID           string `gorm:"type:uuid;primaryKey;column:uid" json:"uid"`
-	Name         string `json:"name"`
-	MessagesSent int    `json:"messagesSent"`
+	ID              string             `gorm:"type:uuid;primaryKey;column:uid" json:"uid"`
+	Name            string             `json:"name"`
+	MessagesSent    int                `json:"messagesSent"`
+	Leads           []Lead             `gorm:"foreignKey:ClientUID;references:ID" json:"leads"`
+	MessagesInQueue []MessageQueueItem `gorm:"foreignKey:FromClientID;references:ID" json:"messageQueue"`
+	AllMessagesSent []MessageQueueItem `gorm:"foreignKey:FromClientID;references:ID" json:"allMessagesSent"`
 }
 type Lead struct {
 	LeadNumber       string       `json:"leadNumber"`
@@ -73,14 +57,15 @@ type Lead struct {
 }
 
 type MessageQueueItem struct {
-	MsgUID            string       `gorm:"type:uuid;primaryKey;column:msg_uid" json:"uid"`
-	MessageBody       string       `gorm:"column:message_body" json:"messageBody"`
-	FromClientID      string       `gorm:"type:uuid;column:from_client_id" json:"fromClientId"`
-	ToClientLead      string       `gorm:"column:to_client_lead" json:"toClientLead"`
-	ScheduledSendTime time.Time    `gorm:"column:scheduled_send_time" json:"scheduledSendTime"`
-	TimeSent          sql.NullTime `gorm:"column:time_sent" json:"timeSent"`
-	Status            string       `gorm:"column:status" json:"status"`
-	Archived          bool         `gorm:"column:archived" json:"archived"`
+	MsgUID              string                `gorm:"type:uuid;primaryKey;column:msg_uid" json:"uid"`
+	MessageBody         string                `gorm:"column:message_body" json:"messageBody"`
+	FromClientID        string                `gorm:"type:uuid;column:from_client_id" json:"fromClientId"`
+	ToClientLead        string                `gorm:"column:to_client_lead" json:"toClientLead"`
+	ScheduledSendTime   time.Time             `gorm:"column:scheduled_send_time" json:"scheduledSendTime"`
+	TimeSent            sql.NullTime          `gorm:"column:time_sent" json:"timeSent"`
+	Status              string                `gorm:"column:status" json:"status"`
+	Archived            bool                  `gorm:"column:archived" json:"archived"`
+	MessageEventHistory []MessageEventHistory `gorm:"foreignKey:MsgUID;references:MsgUID" json:"messageEventHistory"`
 }
 
 type MessageEventHistory struct {
