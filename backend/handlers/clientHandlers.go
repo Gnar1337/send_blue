@@ -61,7 +61,10 @@ func (db *DBConn) GetClientLeads() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var leads []types.Lead
 		clientId := c.Query("client_id")
-		rows, err := db.Conn.Raw("SELECT lead_number FROM client_leads WHERE client_uid = $1", clientId).Rows()
+		query := `SELECT lead_number 
+				  FROM client_leads 
+				  WHERE client_uid = $1`
+		rows, err := db.Conn.Raw(query, clientId).Rows()
 		if err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
@@ -85,10 +88,14 @@ func (db *DBConn) GetClientsQueue() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var msgs []types.MessageQueueItem
 		fromClientId := c.Query("client_id")
-		// _ = db.Table("clients").Find(&clients)
-		rows, err := db.Conn.Raw("SELECT msg_uid::text, message_body, from_client_id::text, to_client_lead, scheduled_send_time, time_sent, status FROM message_queue WHERE status = 'QUEUED' AND from_client_id::text = $1 AND NOT archived ORDER BY scheduled_send_time ASC", fromClientId).Rows()
+		query := `SELECT msg_uid::text, message_body, from_client_id::text, to_client_lead, scheduled_send_time, time_sent, status 
+				  FROM message_queue 
+				  WHERE status = 'QUEUED'
+				  AND from_client_id::text = $1
+				  AND NOT archived
+				  ORDER BY scheduled_send_time ASC`
+		rows, err := db.Conn.Raw(query, fromClientId).Rows()
 		if err != nil {
-
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
 		}
@@ -111,10 +118,12 @@ func (db *DBConn) GetMessageHistory() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var msgHistory []types.MessageEventHistory
 		msgUid := c.Query("msg_uid")
-		// _ = db.Table("clients").Find(&clients)
-		rows, err := db.Conn.Raw("SELECT msg_uid::text, curr_status, prev_status, event_time FROM message_event_history WHERE msg_uid::text = $1 ORDER BY event_time ASC", msgUid).Rows()
+		query := `SELECT msg_uid::text, curr_status, prev_status, event_time 
+				  FROM message_event_history 
+				  WHERE msg_uid::text = $1
+				  ORDER BY event_time ASC`
+		rows, err := db.Conn.Raw(query, msgUid).Rows()
 		if err != nil {
-
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
 		}
@@ -167,7 +176,6 @@ func (db *DBConn) ClientGetData() gin.HandlerFunc {
 		if err != nil {
 			log.Println("Error scanning name:", err)
 		}
-		fmt.Println("executed query")
 		c.JSON(200, gin.H{"client": client})
 	}
 }
@@ -180,8 +188,10 @@ func (db *DBConn) ScheduleMessage(messageQueue *types.MessageQueue) gin.HandlerF
 			c.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
-		// Insert into DB and get the generated UUID
-		result := db.Conn.Raw("INSERT INTO message_queue (message_body, from_client_id, to_client_lead, scheduled_send_time, status, archived) VALUES ($1, $2, $3, $4, $5, $6) RETURNING msg_uid",
+		query := `INSERT INTO message_queue (message_body, from_client_id, to_client_lead, scheduled_send_time, status, archived)
+				  	VALUES ($1, $2, $3, $4, $5, $6) 
+					RETURNING msg_uid`
+		result := db.Conn.Raw(query,
 			msgToQueue.MessageBody,
 			msgToQueue.FromClientID,
 			msgToQueue.ToClientLead,

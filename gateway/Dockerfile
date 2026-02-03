@@ -17,4 +17,4 @@ COPY --from=builder /bin/app /app
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 ENTRYPOINT ["/app"]
-EXPOSE 8080
+EXPOSE 50051

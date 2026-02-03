@@ -101,17 +101,17 @@ export default {
     },
   },
   created() {
-    fetchClientLeads(this.clientId).then((leads) => {
-      this.leads = leads
-    })
+    // fetchClientLeads(this.clientId).then((leads) => {
+    //   this.leads = leads
+    // })
     // default date/time to one hour from now
     this.dateTime = new Date(Date.now() + 60 * 60 * 1000)
   },
-  mounted() {
-    fetchClientLeads(this.clientId).then((leads) => {
-        this.leads = leads
-      })
-  },
+  // mounted() {
+  //   fetchClientLeads(this.clientId).then((leads) => {
+  //       this.leads = leads
+  //     })
+  // },
   data() {
     return {
       leads: [] as ClientLead[],

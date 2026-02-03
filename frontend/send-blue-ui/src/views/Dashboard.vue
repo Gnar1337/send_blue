@@ -2,7 +2,7 @@
     <div class="dashboard">
         <div class="dashboard-container">
            <div class="table-section">
-                <h2>Message Queue</h2>
+                <h2>Messages</h2>
                 <table class="data-table">
                     <thead>
                         <tr>

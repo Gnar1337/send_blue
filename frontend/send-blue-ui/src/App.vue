@@ -14,6 +14,7 @@ const store = clientStore()
       <img alt="Vue logo" class="logo" src="@/assets/send_blue_logo.jpg" width="80" />
 
       <nav class="nav-links">
+        <RouterLink to="/">Refresh</RouterLink>
         <RouterLink :to="`/dash/${selectedClientId}`">Dashboard</RouterLink>
         <RouterLink :to="`/schedule/${selectedClientId}`">Schedule</RouterLink>
       </nav>
@@ -31,7 +32,7 @@ const store = clientStore()
 
     <!-- ROUTER CONTENT BELOW -->
     <main class="route-container">
-      <RouterView v-if="selectedClientId && !clientsLoading" :key="update" />
+      <RouterView :key="update" @clients-loaded="onClientsLoaded" />
     </main>
 
   </div>
@@ -44,32 +45,26 @@ export default {
       selectedClientId: '',
       update: 0,
       clients: [] as Client[],
-      clientsLoading: true,
+      clientsLoading: false,
       clientsError: false,
       schedule: true,
     };
   },
   created() {
     console.log('App created hook');
-    router.push({ path: `/schedule/` });
-    fetchClients().then(data => {
-      this.clients = data;
-      this.clientsLoading = false;
-    }).catch(err => {
-      console.error('Error fetching clients:', err);
-      this.clientsError = true;
-      this.clientsLoading = false;
-    })
   },
-  watch: {
-  clients(newVal) {
-    if (newVal.length > 0) {
-      this.selectedClientId = newVal[0].uid;
-      this.onClientChange()
-    }
-  }
-}, 
   methods: {
+    onClientsLoaded(clients: Client[]) {
+      this.clients = clients;
+      if (this.clients.length > 0) {
+        this.selectedClientId = this.clients[0]?.uid ?? '';
+        var basePath = '/schedule/' + this.selectedClientId
+        router.push({ path: basePath });
+        clientStore().setCurrClient(this.selectedClientId)
+      } else{
+        router.push({ path: '/' });
+      }
+    },
     onClientChange() {
       var basePath = '/' + router.currentRoute.value.path.split('/')[1]
       router.push({ path: `${basePath}/${this.selectedClientId}` });

@@ -53,6 +53,12 @@ func main() {
 
 // //////////////// UTILITIES ////////////////////////
 func populateLeads(db *gorm.DB) {
+	// Check if leads already exists
+	var count int64
+	db.Raw("SELECT COUNT(*) FROM client_leads").Scan(&count)
+	if count > 0 {
+		return
+	}
 	rows, err := db.Raw("SELECT uid::text FROM clients").Rows()
 	if err != nil {
 		log.Println("Error getting client rows:", err)
