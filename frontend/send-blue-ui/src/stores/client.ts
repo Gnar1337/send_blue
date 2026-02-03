@@ -31,15 +31,17 @@ export const clientStore = defineStore('client',{
     getClients(): Client[] {
       return this.clients;
     },
+    getCurrClient(): Client {
+      return this.currClient;
+    },
  async setCurrClient(client: string) {
-      console.log('Setting current client to:', client);
       fetchClientData(client).then(data => {
-        console.log("data got = ", data)
         this.currClient.leads = data.leads
         this.currClient.messageQueue = data.messageQueue
         this.currClient.allMessagesSent = data.allMessagesSent
         this.currClient.uid = data.uid
         this.currClient.name = data.name
+        this.currClient.messagesSent = data.allMessagesSent.length
       } )
     }
   },

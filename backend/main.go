@@ -41,7 +41,8 @@ func main() {
 	r.GET("/clients/scheduled", DB.GetClientsQueue())
 	r.GET("/client/data", DB.ClientGetData())
 	r.POST("/client/schedule_message", DB.ScheduleMessage(MessageQueue))
-	//interval change
+	r.GET("/message/history", DB.GetMessageHistory())
+	//interval change message/history?msg_uid
 	r.GET("/gateway/interval", DB.SetMessageQueueInterval(MessageQueue))
 
 	go populateLeads(DB.Conn)
@@ -65,7 +66,7 @@ func populateLeads(db *gorm.DB) {
 			continue
 		}
 		for i := 1; i <= 5; i++ {
-			num := 3373230000 + i
+			num := 3373133753 + i
 			leadNumber := "+1" + fmt.Sprint(num)
 			result := db.Exec("INSERT INTO client_leads (lead_number, client_uid) VALUES ($1, $2)", leadNumber, clientId)
 			if result.Error != nil {

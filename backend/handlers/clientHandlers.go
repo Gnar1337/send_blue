@@ -106,6 +106,32 @@ func (db *DBConn) GetClientsQueue() gin.HandlerFunc {
 	}
 }
 
+// GetMessageHistory gets the list of a message's event history
+func (db *DBConn) GetMessageHistory() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var msgHistory []types.MessageEventHistory
+		msgUid := c.Query("msg_uid")
+		// _ = db.Table("clients").Find(&clients)
+		rows, err := db.Conn.Raw("SELECT msg_uid::text, curr_status, prev_status, event_time FROM message_event_history WHERE msg_uid::text = $1 ORDER BY event_time ASC", msgUid).Rows()
+		if err != nil {
+
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+		for rows.Next() {
+			var msg types.MessageEventHistory
+			if err := rows.Scan(&msg.MsgUID, &msg.CurrStatus, &msg.PrevStatus, &msg.TimeStamp); err != nil {
+				c.JSON(500, gin.H{"error": err.Error()})
+				return
+			}
+			msgHistory = append(msgHistory, msg)
+		}
+		c.JSON(200, gin.H{
+			"messagesHistory": msgHistory,
+		})
+	}
+}
+
 // ClientGetData gets the messages sent and queued for the given client
 func (db *DBConn) ClientGetData() gin.HandlerFunc {
 	return func(c *gin.Context) {

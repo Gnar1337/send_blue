@@ -115,8 +115,8 @@ type MessageQueueItem struct {
 
 // MessageEventHistory is for tracking a messages history
 type MessageEventHistory struct {
-	MsgUID     string    `gorm:"type:uuid;column:msg_uid" json:"msgUid"`
-	TimeStamp  time.Time `gorm:"column:event_time" json:"time_stamp"`
-	PrevStatus string    `gorm:"column:prev_status" json:"prev_status"`
-	CurrStatus string    `gorm:"column:curr_status" json:"curr_status"`
+	MsgUID     string         `gorm:"type:uuid;column:msg_uid" json:"msgUid"`
+	TimeStamp  time.Time      `gorm:"column:event_time" json:"time_stamp"`
+	PrevStatus sql.NullString `gorm:"column:prev_status" json:"prev_status"`
+	CurrStatus string         `gorm:"column:curr_status" json:"curr_status"`
 }

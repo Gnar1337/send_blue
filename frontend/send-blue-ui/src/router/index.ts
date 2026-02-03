@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 // import HomeView from '../views/HomeView.vue'
 import Schedule from '../views/Schedule.vue'
-import Dash from '../views/Dash.vue'
+import Dashboard from '../views/Dashboard.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -9,7 +9,7 @@ const router = createRouter({
         {
       path: '/dash/:clientId?',
       name: 'dash',
-      component: Dash,
+      component: Dashboard,
     },
     {
       path: '/schedule/:clientId?',

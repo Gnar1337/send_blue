@@ -2,6 +2,30 @@
 <template>
   <div class="page">
     <div class="card form-card">
+      <div class="stats-banner">
+        <div class="stats-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
+          </svg>
+        </div>
+        <div class="stats-text">
+          <span class="stats-number">{{ messagesSent }}</span>
+          <span class="stats-label">messages sent so far</span>
+        </div>
+        <div class="stats-banner stats-banner-queued">
+        <div class="stats-icon stats-icon-queued">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          </div>
+          <div class="stats-text">
+            <span class="stats-number stats-number-queued">{{ messagesQueued }}</span>
+            <span class="stats-label">messages queued</span>
+          </div>
+        </div>
+      </div>
+      
       <label class="field-label">Phone Number</label>
       <div class="lead-row">
         <select class="lead-select" v-model="phone" @change="onLeadChange">
@@ -45,7 +69,7 @@
 
 <script lang="ts">
 import type { ClientLead, MessageQueue } from '../data.ts'
-import ScheduledMessages from './ScheduledMessages.vue'
+import ScheduledMessages from '../components/ScheduledMessages.vue'
 import { VueDatePicker } from '@vuepic/vue-datepicker'
 import { fetchClientLeads, fetchMessageQueue } from '../data.ts'
 import '@vuepic/vue-datepicker/dist/main.css'
@@ -63,7 +87,6 @@ export default {
   watch: {
     clientId: {
       handler(newVal: string) {
-        console.log('clientId changed to:', newVal)
         if (newVal) {
           fetchClientLeads(newVal).then((leads) => {
             this.leads = leads
@@ -73,6 +96,7 @@ export default {
           })
         }
       },
+      immediate: true,
       deep: true,
     },
   },
@@ -98,9 +122,16 @@ export default {
       dateTime: new Date(),
       clientsLoading: false,
       clientsError: false,
+      store: clientStore(),
     }
   },
   computed: {
+    messagesSent(): number {
+    return this.store?.currClient?.allMessagesSent?.length || 0
+  },
+      messagesQueued(): number {
+    return this.store?.currClient?.messageQueue?.length || 0
+  },
     canSchedule() {
       if (!this.phone || !this.message || !this.dateTime) return false
       // require future date/time
@@ -124,12 +155,10 @@ export default {
         console.error('Backend error scheduling message:', data.error)
         throw new Error(data.error)
       } else{
-          console.log('Message scheduled successfully:', data)
           fetchMessageQueue(this.clientId || '').then((messages) => {
             this.scheduledMessages = messages
             clientStore().setCurrClient(this.clientId)
           })
-
       }
     },
     onLeadChange() {
@@ -158,6 +187,7 @@ export default {
         this.phone = ''
         this.message = ''
         this.dateTime = new Date(Date.now() + 60 * 60 * 1000)
+        clientStore().setCurrClient(this.clientId)
       })
     //   this.scheduledMessages.push(msgToQueue);
     },
@@ -177,20 +207,21 @@ export default {
 
 <style scoped>
 .page {
-  max-width: 920px;
+  width: 100%;
   margin: 32px auto;
-  padding: 0 20px;
+  padding: 32px 20px;
   color: #e6eef8;
   font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
   background: linear-gradient(180deg, #071329 0%, #0b1220 100%);
 }
 
 .card {
-  background: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.01) 100%);
-  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(99, 80, 80, 0.02) 0%, rgba(255,255,255,0.01) 100%);
+  border-radius: 18px;
   padding: 28px;
-  border: 1px solid rgba(255,255,255,0.03);
-  box-shadow: 0 18px 30px rgba(2, 6, 23, 0.6);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 20px 60px rgba(33, 86, 255, 0.3), 0 0 40px rgba(107, 61, 241, 0.2), inset 0 1px 0 rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
 }
 
 .form-card {
@@ -407,5 +438,96 @@ export default {
 /* time picker rows */
 :deep(.vdp__time) {
   color: #e6eef8;
+}
+.stats-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.stats-banner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  margin-bottom: 12px;
+  background: linear-gradient(135deg, rgba(33, 86, 255, 0.15) 0%, rgba(107, 61, 241, 0.15) 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(33, 86, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.stats-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.stats-banner-queued {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(34, 197, 94, 0.15) 100%);
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.2);
+}
+
+.stats-banner-queued::before {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+}
+
+.stats-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2156ff 0%, #6b3df1 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 8px 24px rgba(33, 86, 255, 0.4);
+  stroke: #ffffff;
+}
+
+.stats-icon-queued {
+  background: linear-gradient(135deg, #10b981 0%, #22c55e 100%);
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+}
+
+.stats-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.stats-number {
+  font-size: 48px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #ec4899 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.stats-number-queued {
+  background: linear-gradient(135deg, #10b981 0%, #22c55e 50%, #84cc16 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stats-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 </style>

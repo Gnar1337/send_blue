@@ -7,31 +7,34 @@ import router from './router/index.ts';
 const store = clientStore()
 </script>
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/send_blue_logo.jpg" width="125" height="125" />
+  <div class="app-container">
 
-    <div class="wrapper">
-    <div v-if="clientsLoading" class="card form-card">
-        Loading clients...
-    </div>
-    <div v-else class="card form-card">
-      <label class="field-label">Client</label>
-      <div class="client-row">
+    <!-- TOP BANNER -->
+    <header class="top-banner">
+      <img alt="Vue logo" class="logo" src="@/assets/send_blue_logo.jpg" width="80" />
+
+      <nav class="nav-links">
+        <RouterLink :to="`/dash/${selectedClientId}`">Dashboard</RouterLink>
+        <RouterLink :to="`/schedule/${selectedClientId}`">Schedule</RouterLink>
+      </nav>
+
+      <div class="client-select-wrapper">
+        login as:
         <select class="client-select" v-model="selectedClientId" @change="onClientChange">
           <option value="">Select a client...</option>
-          <option v-for="c in clients" :key="c.name" :value="c.uid">
+          <option v-for="c in clients" :key="c.uid" :value="c.uid">
             {{ c.name }}
           </option>
         </select>
       </div>
-    </div>
-      <nav>
-        <RouterLink :to="`/dash/${selectedClientId}`">Dashboard</RouterLink>
-        <RouterLink :to="`/schedule/${selectedClientId}`">Schedule</RouterLink>
-      </nav>
-    </div>
-  </header>
-  <RouterView v-if="selectedClientId != '' && !clientsLoading" :key="update" />
+    </header>
+
+    <!-- ROUTER CONTENT BELOW -->
+    <main class="route-container">
+      <RouterView v-if="selectedClientId && !clientsLoading" :key="update" />
+    </main>
+
+  </div>
 </template>
 <script lang="ts">
 export default {
@@ -48,6 +51,7 @@ export default {
   },
   created() {
     console.log('App created hook');
+    router.push({ path: `/schedule/` });
     fetchClients().then(data => {
       this.clients = data;
       this.clientsLoading = false;
@@ -61,17 +65,15 @@ export default {
   clients(newVal) {
     if (newVal.length > 0) {
       this.selectedClientId = newVal[0].uid;
-      this.onClientChange
+      this.onClientChange()
     }
   }
 }, 
   methods: {
     onClientChange() {
       var basePath = '/' + router.currentRoute.value.path.split('/')[1]
-      console.log('Selected path = ', basePath + '/' + this.selectedClientId);
       router.push({ path: `${basePath}/${this.selectedClientId}` });
       clientStore().setCurrClient(this.selectedClientId).finally( () => {
-        console.log(this.selectedClientId)
         this.update++
       });
     },
@@ -79,82 +81,67 @@ export default {
 };
 </script>
 <style scoped>
-.client-row {
+.app-container {
   display: flex;
-  gap: 10px;
-  color: rgb(66, 148, 224);
-  background: rgba(255, 255, 255, 0.02);
-  align-items: center;
+  flex-direction: column;
+  height: 100vh;
 }
 
-.client-select {
-  flex: 1;
-  padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.04);
-  background: rgba(255,255,255,0.02);
-  color: #4686e7;
-  outline: none;
-}
-header {
-  line-height: 1.5;
-  max-height: 100vh;
+/* FIXED TOP BANNER */
+.top-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
 }
 
 .logo {
-  display: block;
-  margin: 0 auto 2rem;
+  height: 60px;
+  width: 60px;
 }
 
-nav {
+/* NAV LINKS */
+.nav-links a {
+  margin: 0 10px;
+  color: #4686e7;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.nav-links a.router-link-exact-active {
+  color: white;
+}
+
+/* CLIENT DROPDOWN */
+.client-select-wrapper {
+  min-width: 200px;
+}
+
+.client-select {
   width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.1);
+  color: #4686e7;
+  border: 1px solid rgba(255,255,255,0.2);
 }
 
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
-
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
+/* ROUTER CONTENT BELOW HEADER */
+.route-container {
+  margin-top: 100px; /* height of header */
+  overflow-y: auto;
+  padding: 0;
+  flex: 1;
+  display: block;
+  width: 100%;
+  max-width: 100%;
 }
 </style>

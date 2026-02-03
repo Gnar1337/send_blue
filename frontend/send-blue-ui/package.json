@@ -16,10 +16,12 @@
   },
   "dependencies": {
     "@carbon/charts-vue": "^1.27.2",
+    "@carbon/vue": "^3.0.30",
     "@vuepic/vue-datepicker": "^12.1.0",
     "chart.js": "^4.5.1",
     "pinia": "^3.0.4",
     "vue": "^3.5.27",
+    "vue-chart-3": "^4.0.1",
     "vue-chartjs": "^5.3.3",
     "vue-echarts": "^8.0.1",
     "vue-router": "^4.6.4"

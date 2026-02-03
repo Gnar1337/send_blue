@@ -1,7 +1,7 @@
 @import './base.css';
 
 #app {
-  max-width: 1280px;
+  width: 100%; /* Changed from max-width to width */
   margin: 0 auto;
   padding: 2rem;
   font-weight: normal;
@@ -14,6 +14,21 @@ a,
   transition: 0.4s;
   padding: 3px;
 }
+.page {
+  width: 100%;
+  margin: 32px auto;
+  padding: 32px 20px;
+  color: #e6eef8;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: linear-gradient(180deg, #071329 0%, #0b1220 100%);
+  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+}
+
+.page::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari, Opera */
+}
+
 
 @media (hover: hover) {
   a:hover {

@@ -28,7 +28,7 @@ export interface MessageQueue {
 }
 // Dashboard message event history interface
 export interface MessageEventHistory {
-    msgUid: string;
+    uid: string;
     time_stamp: Date;
     prev_status: string | null;
     curr_status: string;
@@ -37,7 +37,7 @@ export interface MessageEventHistory {
 /////////////////API CALLS//////////////////////
 
 export async function fetchClients(): Promise<Client[]> {
-    console.log('fetchClients called');
+    // console.log('fetchClients called');
     const clients: Client[] = []
     try {
         const base = import.meta.env.VITE_API_BASE || ''    
@@ -73,7 +73,6 @@ export async function fetchMessageQueue(clientID: string): Promise<MessageQueue[
         const res = await fetch(`${base}/clients/scheduled?client_id=${clientID}`)
         if (!res.ok) throw new Error('Network')
         const data = await res.json()
-        console.log('Fetched scheduled messages:', data)
         queue.push(...(data.messages || []))
       } catch (e) {
         console.error('fetchMessageQueue error', e)
@@ -98,6 +97,23 @@ export async function fetchClientData(clientID: string): Promise<Client> {
         console.error('fetchClientData error', e)
       } finally {
         return client
+      }
+}
+
+export async function fetchMessageEventHistory(msgUid: string): Promise<MessageEventHistory[]> {
+    const history: MessageEventHistory[] = []
+    try {
+        // console.log('fetchMessageEventHistory called for msgUid:', msgUid);
+        const base = import.meta.env.VITE_API_BASE || ''
+        const res = await fetch(`${base}/message/history?msg_uid=${msgUid}`)
+        if (!res.ok) throw new Error('Network')
+        const data = await res.json()
+        // console.log('Fetched message history:', data)
+        history.values = data.messagesHistory
+      } catch (e) {
+        console.error('fetchMessageEventHistory error', e)
+      } finally {
+        return history
       }
 }
 
