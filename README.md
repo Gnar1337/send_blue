@@ -4,7 +4,7 @@
 
 1. Clone the Repo `git clone https://github.com/Gnar1337/send_blue.git`
 2. `cd send_blue`
-3. change `QUEUE_INTERVAL` value to change the interval between sending messages in the `docker-compose.yaml`
+3. (optional) change `QUEUE_INTERVAL` value to change the interval between emptying the queue in the `docker-compose.yaml` its set to 180 seconds
 4. run `docker compose up` 
 5. Navigate to `http://localhost:5173/` to schedule
 6. to change the queue send time use this url get `http://localhost:8080/gateway/interval?seconds=180` this example will change the queue time to 180 seconds
